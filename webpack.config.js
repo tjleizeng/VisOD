@@ -28,7 +28,7 @@ module.exports = {
     new webpack.DefinePlugin({
       'process.env': {
         NODE_ENV: JSON.stringify(process.env.NODE_ENV || 'development'),
-        MapboxAccessToken: JSON.stringify(process.env.MapboxAccessToken)
+        MapboxAccessToken: JSON.stringify('pk.eyJ1IjoibGVpemVuZ3hpYW5nIiwiYSI6ImNqNTM4NnV3YjA0Z2cyd3BnOXFuajg1YmoifQ.xC1N6Uxu4k-1LMjbSSM8NQ')
       }
     })],
   devServer: {

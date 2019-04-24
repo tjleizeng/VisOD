@@ -1,20 +1,27 @@
-import { ScatterplotLayer, HexagonLayer, GeoJsonLayer, ArcLayer } from 'deck.gl';
-import {scaleQuantile, scaleLinear, scaleThreshold} from 'd3-scale';
+import { GeoJsonLayer, ArcLayer } from 'deck.gl';
+import {scaleThreshold} from 'd3-scale';
 
-const PICKUP_COLOR = [114, 19, 108];
-const DROPOFF_COLOR = [243, 185, 72];
 
-const HEATMAP_COLORS = [
-  [255, 255, 204],
-  [199, 233, 180],
-  [127, 205, 187],
-  [65, 182, 196],
-  [44, 127, 184],
-  [37, 52, 148]
+const outFlowColors = [
+  [52, 152, 219],
+  [93, 173, 226],
+  [133, 193, 233],
+  [241, 148, 138],
+  [236, 112, 99],
+  [231, 76, 60]
+];
+
+const inFlowColors = [
+  [231, 76, 60],
+  [236, 112, 99],
+  [241, 148, 138],
+  [133, 193, 233],
+  [93, 173, 226],
+  [52, 152, 219]
 ];
 
 const COLOR_SCALE = scaleThreshold()
-  .domain([0,10,20,30,40,50])
+  .domain([0,200,500,1000,5000,10000])
   .range([
     [247, 249, 249],
     [171, 235, 198],
@@ -24,24 +31,6 @@ const COLOR_SCALE = scaleThreshold()
     [211, 84, 0],
     [203, 67, 53]
   ]);
-
-const OUT_FLOW_COLOR = [
-  [52, 152, 219],
-  [93, 173, 226],
-  [133, 193, 233],
-  [241, 148, 138],
-  [236, 112, 99],
-  [231, 76, 60]
-];
-
-const IN_FLOW_COLOR = [
-  [231, 76, 60],
-  [236, 112, 99],
-  [241, 148, 138],
-  [133, 193, 233],
-  [93, 173, 226],
-  [52, 152, 219]
-];
 
 
 
@@ -54,41 +43,45 @@ const LIGHT_SETTINGS = {
   numberOfLights: 2
 };
 
-const elevationRange = [0, 1000];
-
 export function renderLayers(props) {
-  const { data, hour, onHover, settings } = props;
-  const filteredData = hour === null ? data : data.filter(d => d.hour === hour);
-
+  const { data, arcs, zones, onHover, onSelect, settings} = props;
   return [
-    settings.showScatterplot &&
-      new ScatterplotLayer({
-        id: 'scatterplot',
-        getPosition: d => d.position,
-        getColor: d => (d.pickup ? PICKUP_COLOR : DROPOFF_COLOR),
-        getRadius: d => 5,
-        opacity: 0.5,
-        pickable: true,
-        radiusMinPixels: 0.25,
-        radiusMaxPixels: 30,
-        data: filteredData,
-        onHover,
-        ...settings
-      }),
-    settings.showHexagon &&
-      new HexagonLayer({
-        id: 'heatmap',
-        colorRange: HEATMAP_COLORS,
-        elevationRange,
-        elevationScale: 5,
-        extruded: true,
-        getPosition: d => d.position,
-        lightSettings: LIGHT_SETTINGS,
-        opacity: 0.8,
-        pickable: true,
-        data: filteredData,
-        onHover,
-        ...settings
-      })
+    (settings.showEdge && arcs) &&
+    new ArcLayer({
+      id: 'arc',
+      data: arcs,
+      getSourcePosition: d => d.source,
+      getTargetPosition: d => d.target,
+      getSourceColor: d => (d.gain > 0 ? inFlowColors : outFlowColors)[d.quantile],
+      getTargetColor: d => (d.gain > 0 ? outFlowColors : inFlowColors)[d.quantile],
+      getStrokeWidth: d => Math.min(d.value/5, 10),
+      updateTriggers: {
+        // triggered
+        data: arcs
+      }
+    }),
+
+    new GeoJsonLayer({
+      id: 'geojson',
+      data: zones,
+      opacity: 0.2,
+      stroked: false,
+      filled: true,
+      extruded: true,
+      wireframe: true,
+      fp64: true,
+      getFillColor: f => COLOR_SCALE(
+          data.outFlow[f.properties.OBJECTID-1]+data.inFlow[f.properties.OBJECTID-1]
+      ),
+      getElevation: 0,
+      lightSettings: LIGHT_SETTINGS,
+      pickable: true,
+      onHover: onHover,
+      onClick: onSelect,
+      updateTriggers: {
+        // triggered
+        getFillColor: data
+      }
+    })
   ];
 }

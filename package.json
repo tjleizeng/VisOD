@@ -7,6 +7,7 @@
   },
   "dependencies": {
     "deck.gl": "^6.2.4",
+    "jquery-csv": "^0.8.12",
     "luma.gl": "^6.2.0",
     "react": "^16.6.1",
     "react-dom": "^16.6.1",
