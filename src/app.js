@@ -13,7 +13,6 @@ import {scaleQuantile} from 'd3-scale';
 import taxiData from '../data/fhv.js';
 import taxiZone from '../data/taxi_zones.json';
 
-
 const outFlowColors = [
   [52, 152, 219],
   [93, 173, 226],
@@ -34,11 +33,11 @@ const inFlowColors = [
 
 const INITIAL_VIEW_STATE = {
   longitude: -74,
-  latitude: 40.7,
-  zoom: 11,
+  latitude: 40.65,
+  zoom: 10.5,
   minZoom: 5,
   maxZoom: 16,
-  pitch: 0,
+  pitch: 40,
   bearing: 0
 };
 
@@ -72,8 +71,6 @@ function findIndicesOfMax(input, count) {
   }
   return output;
 }
-
-
 
 export default class App extends Component {
   state = {
