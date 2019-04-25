@@ -60,3 +60,20 @@ export const spinner = {
   transformOrigin: '20px 20px',
   zIndex: 110
 }
+
+export const panel = {
+  background: 'white',
+  borderRadius: 3,
+  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
+  fontFamily:
+      'ff-clan-web-pro, "Helvetica Neue", Helvetica, sans-serif !important',
+  fontSize: '12px',
+  lineHeight: 1.833,
+  width: 400,
+  height: 450,
+  padding: '20px',
+  position: 'absolute',
+  right: '20px',
+  bottom: 20,
+  zIndex: 100
+};

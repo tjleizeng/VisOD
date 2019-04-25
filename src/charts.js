@@ -2,11 +2,15 @@ import React from 'react';
 import { charts } from './style';
 
 import {
-  VerticalBarSeries,
+  VerticalRectSeries,
   XAxis,
   XYPlot,
   YAxis
 } from 'react-vis';
+
+function getMaxOfArray(numArray) {
+  return Math.max.apply(null, numArray);
+}
 
 export default function Charts({
   //highlight,
@@ -21,20 +25,28 @@ export default function Charts({
   }
 
   //console.log(settings)
-  var counts = []
-  if(settings.dispType == "outflow") {
-    const sums = dispData.pickUp.reduce((a, b) => a + b);
-    counts = dispData.hour.map((k, i) => ({hour: Number(k), x: Number(k) + 0.5, y: dispData.pickUp[i] / sums}));
-  }
-  else{
-    const sums = dispData.dropOff.reduce((a, b) => a + b);
-    counts = dispData.hour.map((k, i) => ({hour: Number(k), x: Number(k) + 0.5, y: dispData.dropOff[i] / sums}));
-  }
-  //console.log(counts);
-  const data = counts.map(d => {
-    let color = '#125C77';
+  const ymax = getMaxOfArray(dispData.pickUp);
+  const ymin = -getMaxOfArray(dispData.dropOff);
+  const axmax =  Math.max(-ymin,ymax);
+
+  const pickupCounts = dispData.hour.map((k, i) => ({hour: Number(k), x: Number(k) + 0.75, x0: Number(k) + 0.25, y: dispData.pickUp[i]-ymin, y0: -ymin}));
+  const dropoffCounts = dispData.hour.map((k, i) => ({hour: Number(k), x: Number(k) + 0.75, x0: Number(k) + 0.25, y: -ymin, y0: -dispData.dropOff[i]-ymin}));
+  //console.log(pickupCounts, dropoffCounts);
+  const positiveBar = pickupCounts.map(d => {
+    let color = '#20639B';
     if (d.hour === selectedHour) {
-      color = '#19CDD7';
+      color = '#3CAEA3';
+    }
+    // if (d.hour === highlightedHour) {
+    //   color = '#17B8BE';
+    // }
+    return { ...d, color };
+  });
+
+  const negativeBar = dropoffCounts.map(d => {
+    let color = '#ED553B';
+    if (d.hour === selectedHour) {
+      color = '#F6D55C';
     }
     // if (d.hour === highlightedHour) {
     //   color = '#17B8BE';
@@ -44,23 +56,31 @@ export default function Charts({
 
   return (<div style={charts}>
     <h2>Trips by hour</h2>
-    <p>As percentage of all trips</p>
+    <p>Positives are pickup, negatives are dropoff</p>
     <XYPlot
-      margin={{ left: 40, right: 25, top: 10, bottom: 25 }}
-      height={140}
+      margin={{ left: 80, right: 25, top: 10, bottom: 25 }}
+      height={120}
       width={480}
-      yDomain={[0, 0.1]}
+      yDomain={[-axmax-ymin, axmax-ymin]}
       //onMouseLeave={() => highlight(null)}
     >
       <YAxis
-        tickFormat={d => (d * 100).toFixed(0) + '%'}
+        tickFormat={d => (d+ymin).toFixed(0)}
+        tickValues={[-axmax-ymin, -ymin, axmax-ymin]}
       />
-      <VerticalBarSeries
+      <VerticalRectSeries
         colorType="literal"
-        data={data}
+        data={positiveBar}
         //onValueMouseOver={d => highlight(d.hour)}
         onValueClick={d => select(d.hour)}
         style={{ cursor: 'pointer' }}
+      />
+      <VerticalRectSeries
+          colorType="literal"
+          data={negativeBar}
+          //onValueMouseOver={d => highlight(d.hour)}
+          onValueClick={d => select(d.hour)}
+          style={{ cursor: 'pointer' }}
       />
       <XAxis
         tickFormat={h => (h % 24) >= 12 ?

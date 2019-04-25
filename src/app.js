@@ -8,9 +8,11 @@ import { LayerControls, MapStylePicker, OD_CONTROLS } from './controls';
 import DeckGL from 'deck.gl';
 import { renderLayers } from './deckgl-layers';
 import Charts from './charts';
+import Panel from './panel';
 import {scaleQuantile} from 'd3-scale';
-import taxiData from '../data/yellow.js';
+import taxiData from '../data/fhv.js';
 import taxiZone from '../data/taxi_zones.json';
+
 
 const outFlowColors = [
   [52, 152, 219],
@@ -59,6 +61,19 @@ function Reshape(input, dim) {
   return od;
 }
 
+function findIndicesOfMax(input, count) {
+  var output = [];
+  for (var i = 0; i < input.length; i++) {
+    output.push(i); // add index to output array
+    if (output.length > count) {
+      output.sort(function(a, b) { return input[b] - input[a]; }); // descending sort the output array
+      output.pop(); // remove the last index (index of smallest element in output array)
+    }
+  }
+  return output;
+}
+
+
 
 export default class App extends Component {
   state = {
@@ -74,7 +89,7 @@ export default class App extends Component {
       {}
     ),
     selectedHour: null,
-    style: 'mapbox://styles/mapbox/light-v9'
+    style: 'mapbox://styles/mapbox/outdoors-v10'
   };
 
   componentDidMount() {
@@ -93,7 +108,6 @@ export default class App extends Component {
     rawData.pickUp = taxiData.slice().map(a => Reshape(a, 266).map(b => b.reduce((c, d) => c + d, 0)));
     rawData.dropOff = taxiData.slice().map(a => Reshape(a, 266).reduce((b,c) => b.SumArray(c)));
 
-    console.log(rawData);
 
     //Calculate for this times display
     const dispData = {
@@ -111,9 +125,8 @@ export default class App extends Component {
     dispData.outFlow = dispData.OD.reduce((b,c) => b.SumArray(c));
     dispData.hour = Array(24).fill(0).map((a,b)=>b+1);
 
-    console.log(dispData);
 
-    this.setState({rawData, dispData});
+    this.setState({rawData, dispData})
   };
 
   _recalculateData = () => {
@@ -126,7 +139,7 @@ export default class App extends Component {
       hour:[]
     }
     if(this.state.selectedHour && this.state.selectedObject){
-      dispData.OD = Reshape(this.state.rawData.OD[this.state.selectedHour],266);
+      dispData.OD = Reshape(this.state.rawData.OD[this.state.selectedHour-1],266);
       dispData.pickUp = this.state.rawData.pickUp.map(a => a[this.state.selectedObject.properties.OBJECTID-1]);
       dispData.dropOff = this.state.rawData.dropOff.map(a => a[this.state.selectedObject.properties.OBJECTID-1]);
       dispData.inFlow = dispData.OD.map(a => a.reduce((b, c) => b + c, 0));
@@ -134,7 +147,7 @@ export default class App extends Component {
       dispData.hour = Array(24).fill(0).map((a,b)=>b+1);
     }
     else if(this.state.selectedHour){
-      dispData.OD = Reshape(this.state.rawData.OD[this.state.selectedHour],266);
+      dispData.OD = Reshape(this.state.rawData.OD[this.state.selectedHour-1],266);
       dispData.pickUp = this.state.rawData.pickUp.map(a => a.reduce((b, c) => b + c, 0));
       dispData.dropOff = this.state.rawData.dropOff.map(a => a.reduce((b, c) => b + c, 0));
       dispData.inFlow = dispData.OD.map(a => a.reduce((b, c) => b + c, 0));
@@ -157,25 +170,46 @@ export default class App extends Component {
       dispData.outFlow = dispData.OD.reduce((b,c) => b.SumArray(c));
       dispData.hour = Array(24).fill(0).map((a,b)=>b+1);
     }
-    this.setState({dispData});
-    console.log(dispData);
+    this.setState({dispData},()=>{this._recalculateArcs()});
   }
 
   _recalculateArcs() {
     var arcs = null;
+    var ranks = null;
     if (this.state.selectedObject) {
-      console.log(this.state.selectedObject)
+      ranks = {
+        destination: [],
+        destinationName: [],
+        destinationTrips: [],
+        origin: [],
+        originName: [],
+        originTrips: []
+      }
+      //console.log(this.state.selectedObject)
       const X = this.state.selectedObject.properties.X;
       const Y = this.state.selectedObject.properties.Y;
       const selectedID = this.state.selectedObject.properties.OBJECTID;
       const toIDs = Array(262).fill(0).map((a, b) => b + 1);
+      const outFlow = this.state.dispData.OD[selectedID - 1].slice(0,262);
+      const inFlow = this.state.dispData.OD.map(a => a[selectedID-1]).slice(0,262);
+      ranks.destination = findIndicesOfMax(outFlow, 10);
+      ranks.origin = findIndicesOfMax(inFlow, 10);
+      ranks.destinationName = ranks.destination.map(a =>{
+        const f = this.state.zones.find(h => (h.properties.OBJECTID - 1) === a);
+        return f.properties.zone;});
+      ranks.originName =ranks.origin.map(a =>{
+        const f = this.state.zones.find(h => (h.properties.OBJECTID - 1) === a);
+        return f.properties.zone;});
+      ranks.destinationTrips = ranks.destination.map(a => outFlow[a]);
+      ranks.originTrips = ranks.origin.map(a => inFlow[a]);
+
       if (this.state.settings.dispType == 'outflow') {
         arcs = toIDs.map(toID => {
           const f = this.state.zones.find(h => (h.properties.OBJECTID - 1) === toID);
           return {
             source: [X, Y],
             target: [f.properties.X, f.properties.Y],
-            value: this.state.dispData.OD[selectedID - 1][toID]
+            value: outFlow[toID]
           };
         });
         const scale = scaleQuantile()
@@ -192,7 +226,7 @@ export default class App extends Component {
           return {
             source: [f.properties.X, f.properties.Y],
             target: [X, Y],
-            value: this.state.dispData.OD[toID][selectedID - 1]
+            value: inFlow[toID]
           };
         });
         const scale = scaleQuantile()
@@ -205,7 +239,7 @@ export default class App extends Component {
         });
       }
     }
-    this.setState({arcs});
+    this.setState({arcs, ranks});
   }
 
   _onHover({x, y, object}) {
@@ -219,7 +253,6 @@ export default class App extends Component {
     this.setState({selectedObject: object === this.state.selectedObject ? null : object
     });
     this._recalculateData();
-    this._recalculateArcs();
   }
 
   _onSelectZone = this._onSelectZone.bind(this);
@@ -230,9 +263,7 @@ export default class App extends Component {
         selectedHour === this.state.selectedHour ?
           null :
           selectedHour
-    });
-    this._recalculateData();
-    this._recalculateArcs();
+    }, ()=>{this._recalculateData();});
   }
 
   onStyleChange = style => {
@@ -245,8 +276,9 @@ export default class App extends Component {
   };
 
   _updateLayerSettings(settings) {
-    this.setState({ settings });
-    this._recalculateArcs();
+    this.setState({ settings }, () => {
+      this._recalculateArcs();
+    });
   }
 
   _renderTooltip() {
@@ -302,6 +334,7 @@ export default class App extends Component {
         <Charts {...this.state}
           select={hour => this._onSelectHour(hour)}
         />
+        <Panel {...this.state} />
       </div>
     );
   }
