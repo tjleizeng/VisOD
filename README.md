@@ -4,6 +4,8 @@ OD data are the traffic flows between origins(O) and destinations(D). It is wide
 
 This project is aiming to create a <b>easy to use</b> visualize program of OD matrix using React and Deck.gl.
 
+The demo is shown in https://visodtest.netlify.com/. The data source is NYC Open Data.
+
 To do list (2019/4/25)
 1. Add legend to od lines.
 2. Add file selection, for changing data files.
