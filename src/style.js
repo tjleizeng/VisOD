@@ -38,12 +38,12 @@ export const charts = {
   fontFamily: 'ff-clan-web-pro, "Helvetica Neue", Helvetica, sans-serif !important',
   fontSize: '12px',
   lineHeight: 1.833,
-  height: 210,
+  height: 240,
   padding: '10px',
   position: 'absolute',
   left: 20,
   bottom: 20,
-  width: 500,
+  width: 400,
   zIndex: 100
 };
 
@@ -69,8 +69,8 @@ export const panel = {
       'ff-clan-web-pro, "Helvetica Neue", Helvetica, sans-serif !important',
   fontSize: '12px',
   lineHeight: 1.833,
-  width: 400,
-  height: 450,
+  width: 360,
+  height: 340,
   padding: '20px',
   position: 'absolute',
   right: '20px',

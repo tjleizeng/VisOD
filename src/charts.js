@@ -59,8 +59,8 @@ export default function Charts({
     <p>Positives are pickup, negatives are dropoff</p>
     <XYPlot
       margin={{ left: 80, right: 25, top: 10, bottom: 25 }}
-      height={120}
-      width={480}
+      height={150}
+      width={400}
       yDomain={[-axmax-ymin, axmax-ymin]}
       //onMouseLeave={() => highlight(null)}
     >

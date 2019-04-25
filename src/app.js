@@ -189,8 +189,8 @@ export default class App extends Component {
       const toIDs = Array(262).fill(0).map((a, b) => b + 1);
       const outFlow = this.state.dispData.OD[selectedID - 1].slice(0,262);
       const inFlow = this.state.dispData.OD.map(a => a[selectedID-1]).slice(0,262);
-      ranks.destination = findIndicesOfMax(outFlow, 10);
-      ranks.origin = findIndicesOfMax(inFlow, 10);
+      ranks.destination = findIndicesOfMax(outFlow, 6);
+      ranks.origin = findIndicesOfMax(inFlow, 6);
       ranks.destinationName = ranks.destination.map(a =>{
         const f = this.state.zones.find(h => (h.properties.OBJECTID - 1) === a);
         return f.properties.zone;});
