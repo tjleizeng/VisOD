@@ -10,11 +10,11 @@ export default function Panel({ranks}) {
       let cellID = `cell${i}-${0}`;
       cell.push(<td key={cellID} id={cellID}>{ranks.destinationName[i]}</td>);
       cellID = `cell${i}-${1}`;
-      cell.push(<td key={cellID} id={cellID}>{ranks.destinationTrips[i]}</td>);
+      cell.push(<td key={cellID} id={cellID}>{ranks.destinationTrips[i]} ({(ranks.destinationPer[i]* 100).toFixed(1) + '%'})</td>);
       cellID = `cell${i}-${2}`;
       cell.push(<td key={cellID} id={cellID}>{ranks.originName[i]}</td>);
       cellID = `cell${i}-${3}`;
-      cell.push(<td key={cellID} id={cellID}>{ranks.originTrips[i]}</td>);
+      cell.push(<td key={cellID} id={cellID}>{ranks.originTrips[i]} ({(ranks.originPer[i]* 100).toFixed(1) + '%'})</td>);
       rows.push(<tr key={i} id={rowID}>{cell}</tr>);
     }
   }

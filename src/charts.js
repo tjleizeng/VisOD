@@ -29,8 +29,8 @@ export default function Charts({
   const ymin = -getMaxOfArray(dispData.dropOff);
   const axmax =  Math.max(-ymin,ymax);
 
-  const pickupCounts = dispData.hour.map((k, i) => ({hour: Number(k), x: Number(k) + 0.75, x0: Number(k) + 0.25, y: dispData.pickUp[i]-ymin, y0: -ymin}));
-  const dropoffCounts = dispData.hour.map((k, i) => ({hour: Number(k), x: Number(k) + 0.75, x0: Number(k) + 0.25, y: -ymin, y0: -dispData.dropOff[i]-ymin}));
+  const pickupCounts = dispData.hour.map((k, i) => ({hour: Number(k), x: Number(k) + 0.8, x0: Number(k) + 0.2, y: dispData.pickUp[i]-ymin, y0: -ymin}));
+  const dropoffCounts = dispData.hour.map((k, i) => ({hour: Number(k), x: Number(k) + 0.8, x0: Number(k) + 0.2, y: -ymin, y0: -dispData.dropOff[i]-ymin}));
   //console.log(pickupCounts, dropoffCounts);
   const positiveBar = pickupCounts.map(d => {
     let color = '#20639B';
@@ -56,7 +56,7 @@ export default function Charts({
 
   return (<div style={charts}>
     <h2>Trips by hour</h2>
-    <p>Positives are pickup, negatives are dropoff</p>
+    <p>Pick an hour. Positives are pick ups, negatives are drop offs</p>
     <XYPlot
       margin={{ left: 80, right: 25, top: 10, bottom: 25 }}
       height={150}

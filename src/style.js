@@ -70,7 +70,7 @@ export const panel = {
   fontSize: '12px',
   lineHeight: 1.833,
   width: 360,
-  height: 340,
+  height: 360,
   padding: '20px',
   position: 'absolute',
   right: '20px',

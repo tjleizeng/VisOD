@@ -1,8 +1,11 @@
-import { GeoJsonLayer, ArcLayer } from 'deck.gl';
+import { ScatterplotLayer, GeoJsonLayer, ArcLayer } from 'deck.gl';
 import {scaleThreshold} from 'd3-scale';
 
 
-const outFlowColors = [
+const pickupColor = [210,1,23];
+const dropoffColor = [0, 128, 255];
+
+const inFlowColors = [
   [52, 152, 219],
   [93, 173, 226],
   [133, 193, 233],
@@ -11,7 +14,7 @@ const outFlowColors = [
   [231, 76, 60]
 ];
 
-const inFlowColors = [
+const outFlowColors = [
   [231, 76, 60],
   [236, 112, 99],
   [241, 148, 138],
@@ -21,7 +24,7 @@ const inFlowColors = [
 ];
 
 const COLOR_SCALE = scaleThreshold()
-  .domain([0,200,500,1000,5000,10000])
+  .domain([0,100,200,500,1000,5000])
   .range([
     [247, 249, 249],
     [171, 235, 198],
@@ -52,26 +55,43 @@ export function renderLayers(props) {
       data: arcs,
       getSourcePosition: d => d.source,
       getTargetPosition: d => d.target,
-      getSourceColor: d => (d.gain > 0 ? inFlowColors : outFlowColors)[d.quantile],
-      getTargetColor: d => (d.gain > 0 ? outFlowColors : inFlowColors)[d.quantile],
-      getStrokeWidth: d => Math.min(d.value/5, 10),
+      getSourceColor: d => outFlowColors[d.quantile],
+      getTargetColor: d => inFlowColors[d.quantile],
+      getStrokeWidth: d => d.value>1? Math.min(d.value,5) : 0,
       updateTriggers: {
         // triggered
         data: arcs
       }
     }),
-
+    new ScatterplotLayer({
+      id: 'scatterplot',
+      getPosition: d => (
+          settings.dispType == 'outflow' ? d.target : d.source
+      ),
+      getFillColor: d => (settings.dispType == 'outflow' ? pickupColor : dropoffColor),
+      getRadius: d => Math.min(d.value * 60, 300),
+      opacity: 1,
+      pickable: false,
+      radiusMinPixels: 0,
+      radiusMaxPixels: 350,
+      data: arcs,
+      updateTriggers: {
+        // triggered
+        data: arcs
+      }
+    }),
     new GeoJsonLayer({
       id: 'geojson',
       data: zones,
-      opacity: 0.2,
+      opacity: 0.3,
       stroked: false,
       filled: true,
       extruded: true,
       wireframe: true,
       fp64: true,
-      getFillColor: f => COLOR_SCALE(
-          data.outFlow[f.properties.OBJECTID-1]+data.inFlow[f.properties.OBJECTID-1]
+      getFillColor: f => (
+        settings.dispType == 'outflow' ? COLOR_SCALE(data.outFlow[f.properties.OBJECTID - 1]) : COLOR_SCALE(
+            data.inFlow[f.properties.OBJECTID - 1])
       ),
       getElevation: 0,
       lightSettings: LIGHT_SETTINGS,
@@ -80,7 +100,7 @@ export function renderLayers(props) {
       onClick: onSelect,
       updateTriggers: {
         // triggered
-        getFillColor: data
+        getFillColor: {data,settings}
       }
     })
   ];

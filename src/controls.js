@@ -7,13 +7,21 @@ export const OD_CONTROLS = {
     type: 'boolean',
     value: true
   },
+  dataSet: {
+    displayName: 'Change data',
+    type: 'dorpdownlist',
+    value: 'fhv',
+    options:[
+      { label: 'FHV', value: 'fhv' },
+      { label: 'Yellow Taxi', value: 'yellow' }]
+  },
   dispType: {
     displayName: 'Display type',
     type: 'dorpdownlist',
     value: 'outflow',
     options:[
-      { label: 'Inflow', value: 'inflow' },
-      { label: 'Outflow', value: 'outflow' }]
+      { label: 'Drop off', value: 'inflow' },
+      { label: 'Pick up', value: 'outflow' }]
   }
 };
 

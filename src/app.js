@@ -10,10 +10,13 @@ import { renderLayers } from './deckgl-layers';
 import Charts from './charts';
 import Panel from './panel';
 import {scaleQuantile} from 'd3-scale';
-import taxiData from '../data/fhv.js';
+import { KeyHandler, KEYPRESS } from 'react-key-handler';
+
+import fhvData from '../data/fhv.js';
+import yellowData from '../data/yellow.js';
 import taxiZone from '../data/taxi_zones.json';
 
-const outFlowColors = [
+const inFlowColors = [
   [52, 152, 219],
   [93, 173, 226],
   [133, 193, 233],
@@ -22,7 +25,7 @@ const outFlowColors = [
   [231, 76, 60]
 ];
 
-const inFlowColors = [
+const outFlowColors = [
   [231, 76, 60],
   [236, 112, 99],
   [241, 148, 138],
@@ -32,12 +35,12 @@ const inFlowColors = [
 ];
 
 const INITIAL_VIEW_STATE = {
-  longitude: -74,
-  latitude: 40.65,
-  zoom: 10.5,
+  longitude: -73.95,
+  latitude: 40.7,
+  zoom: 10.3,
   minZoom: 5,
   maxZoom: 16,
-  pitch: 40,
+  pitch: 0,
   bearing: 0
 };
 
@@ -95,6 +98,14 @@ export default class App extends Component {
 
   _processData = () => {
 
+    var taxiData;
+    if(this.state.settings.dataSet == 'fhv'){
+      taxiData = fhvData;
+    }
+    else{
+      taxiData = yellowData;
+    }
+
     const rawData = {
       OD: [],
       pickUp: [],
@@ -118,12 +129,14 @@ export default class App extends Component {
     dispData.OD = Reshape(rawData.OD.reduce((b,c) => b.SumArray(c)),266);
     dispData.pickUp = rawData.pickUp.map(a => a.reduce((b, c) => b + c, 0));
     dispData.dropOff = rawData.dropOff.map(a => a.reduce((b, c) => b + c, 0));
-    dispData.inFlow = dispData.OD.map(a => a.reduce((b, c) => b + c, 0));
-    dispData.outFlow = dispData.OD.reduce((b,c) => b.SumArray(c));
+    dispData.outFlow = dispData.OD.map(a => a.reduce((b, c) => b + c, 0));
+    dispData.inFlow = dispData.OD.reduce((b,c) => b.SumArray(c));
     dispData.hour = Array(24).fill(0).map((a,b)=>b+1);
 
-
-    this.setState({rawData, dispData})
+    // Initialize
+    const selectedHour = null;
+    const selectedObject = null;
+    this.setState({rawData, dispData, selectedHour, selectedObject},()=>{this._recalculateArcs()})
   };
 
   _recalculateData = () => {
@@ -139,32 +152,32 @@ export default class App extends Component {
       dispData.OD = Reshape(this.state.rawData.OD[this.state.selectedHour-1],266);
       dispData.pickUp = this.state.rawData.pickUp.map(a => a[this.state.selectedObject.properties.OBJECTID-1]);
       dispData.dropOff = this.state.rawData.dropOff.map(a => a[this.state.selectedObject.properties.OBJECTID-1]);
-      dispData.inFlow = dispData.OD.map(a => a.reduce((b, c) => b + c, 0));
-      dispData.outFlow = dispData.OD.reduce((b,c) => b.SumArray(c));
+      dispData.outFlow = dispData.OD.map(a => a.reduce((b, c) => b + c, 0));
+      dispData.inFlow = dispData.OD.reduce((b,c) => b.SumArray(c));
       dispData.hour = Array(24).fill(0).map((a,b)=>b+1);
     }
     else if(this.state.selectedHour){
       dispData.OD = Reshape(this.state.rawData.OD[this.state.selectedHour-1],266);
       dispData.pickUp = this.state.rawData.pickUp.map(a => a.reduce((b, c) => b + c, 0));
       dispData.dropOff = this.state.rawData.dropOff.map(a => a.reduce((b, c) => b + c, 0));
-      dispData.inFlow = dispData.OD.map(a => a.reduce((b, c) => b + c, 0));
-      dispData.outFlow = dispData.OD.reduce((b,c) => b.SumArray(c));
+      dispData.outFlow = dispData.OD.map(a => a.reduce((b, c) => b + c, 0));
+      dispData.inFlow = dispData.OD.reduce((b,c) => b.SumArray(c));
       dispData.hour = Array(24).fill(0).map((a,b)=>b+1);
     }
     else if(this.state.selectedObject){
       dispData.OD = Reshape(this.state.rawData.OD.reduce((b,c) => b.SumArray(c)),266);
       dispData.pickUp = this.state.rawData.pickUp.map(a => a[this.state.selectedObject.properties.OBJECTID-1]);
       dispData.dropOff = this.state.rawData.dropOff.map(a => a[this.state.selectedObject.properties.OBJECTID-1]);
-      dispData.inFlow = dispData.OD.map(a => a.reduce((b, c) => b + c, 0));
-      dispData.outFlow = dispData.OD.reduce((b,c) => b.SumArray(c));
+      dispData.outFlow = dispData.OD.map(a => a.reduce((b, c) => b + c, 0));
+      dispData.inFlow = dispData.OD.reduce((b,c) => b.SumArray(c));
       dispData.hour = Array(24).fill(0).map((a,b)=>b+1);
     }
     else{
       dispData.OD = Reshape(this.state.rawData.OD.reduce((b,c) => b.SumArray(c)),266);
       dispData.pickUp = this.state.rawData.pickUp.map(a => a.reduce((b, c) => b + c, 0));
       dispData.dropOff = this.state.rawData.dropOff.map(a => a.reduce((b, c) => b + c, 0));
-      dispData.inFlow = dispData.OD.map(a => a.reduce((b, c) => b + c, 0));
-      dispData.outFlow = dispData.OD.reduce((b,c) => b.SumArray(c));
+      dispData.outFlow = dispData.OD.map(a => a.reduce((b, c) => b + c, 0));
+      dispData.inFlow = dispData.OD.reduce((b,c) => b.SumArray(c));
       dispData.hour = Array(24).fill(0).map((a,b)=>b+1);
     }
     this.setState({dispData},()=>{this._recalculateArcs()});
@@ -178,9 +191,11 @@ export default class App extends Component {
         destination: [],
         destinationName: [],
         destinationTrips: [],
+        destinationPer: [],
         origin: [],
         originName: [],
-        originTrips: []
+        originTrips: [],
+        originPer: []
       }
       //console.log(this.state.selectedObject)
       const X = this.state.selectedObject.properties.X;
@@ -197,8 +212,16 @@ export default class App extends Component {
       ranks.originName =ranks.origin.map(a =>{
         const f = this.state.zones.find(h => (h.properties.OBJECTID - 1) === a);
         return f.properties.zone;});
+
       ranks.destinationTrips = ranks.destination.map(a => outFlow[a]);
       ranks.originTrips = ranks.origin.map(a => inFlow[a]);
+
+      const outFlowSum = outFlow.reduce((b,c) => b+c,0);
+      const inFlowSum = inFlow.reduce((b,c) => b+c,0);
+
+      ranks.destinationPer = ranks.destinationTrips.map(a => a/outFlowSum);
+      ranks.originPer = ranks.originTrips.map(a => a/inFlowSum);
+      //console.log(ranks.destinationPer, ranks.originPer);
 
       if (this.state.settings.dispType == 'outflow') {
         arcs = toIDs.map(toID => {
@@ -206,7 +229,7 @@ export default class App extends Component {
           return {
             source: [X, Y],
             target: [f.properties.X, f.properties.Y],
-            value: outFlow[toID]
+            value: outFlow[toID]/outFlowSum*100
           };
         });
         const scale = scaleQuantile()
@@ -214,7 +237,6 @@ export default class App extends Component {
             .range(outFlowColors.map((c, i) => i));
 
         arcs.forEach(a => {
-          a.gain = Math.sign(a.value);
           a.quantile = scale(Math.abs(a.value));
         });
       } else {
@@ -223,7 +245,7 @@ export default class App extends Component {
           return {
             source: [f.properties.X, f.properties.Y],
             target: [X, Y],
-            value: inFlow[toID]
+            value: inFlow[toID]/inFlowSum*100
           };
         });
         const scale = scaleQuantile()
@@ -231,7 +253,6 @@ export default class App extends Component {
             .range(inFlowColors.map((c, i) => i));
 
         arcs.forEach(a => {
-          a.gain = Math.sign(a.value);
           a.quantile = scale(Math.abs(a.value));
         });
       }
@@ -273,9 +294,17 @@ export default class App extends Component {
   };
 
   _updateLayerSettings(settings) {
-    this.setState({ settings }, () => {
-      this._recalculateArcs();
-    });
+    if(settings.dataSet != this.state.settings.dataSet){
+      this.setState({ settings }, () => {
+        this._processData();
+      });
+    }
+    else{
+      this.setState({ settings }, () => {
+        this._recalculateArcs();
+      });
+    }
+
   }
 
   _renderTooltip() {
@@ -286,8 +315,8 @@ export default class App extends Component {
             <div className="tooltip" style={{top: y, left: x}}>
               <div> Location id: {hoveredObject.properties.OBJECTID} </div>
               <div> Zone: {hoveredObject.properties.zone} </div>
-              <div> In flow: {dispData.inFlow[hoveredObject.properties.OBJECTID-1]} </div>
-              <div> Out flow: {dispData.outFlow[hoveredObject.properties.OBJECTID-1]} </div>
+              <div> Pick up: {dispData.inFlow[hoveredObject.properties.OBJECTID-1]} </div>
+              <div> Drop off: {dispData.outFlow[hoveredObject.properties.OBJECTID-1]} </div>
             </div>
         )
     );
