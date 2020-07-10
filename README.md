@@ -6,6 +6,9 @@ This project is aiming to create a <b>easy to use</b> visualize program of OD ma
 
 The demo is shown in https://visodtest.netlify.com/. The data source is NYC Open Data.
 
+To do list (2020/7/8)
+1. Add visualization for OD during the pandemic.
+
 To do list (2019/4/25)
 1. Add legend to od lines.
 2. Add file selection, for changing data files.
